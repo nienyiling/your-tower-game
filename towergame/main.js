@@ -8,9 +8,10 @@ const CONFIG = {
   BLOCK_GAP: 0.05,
   LAYERS: 18,
   BLOCKS_PER_LAYER: 3,
-  // 初始塔底座中心高度應位於地面上方半塊積木的距離，
+  // 物理地面厚度為0.2，中心位於Y=0，
+  // 因此塔底中心需在地面頂部(0.1)再加半塊積木(0.15)的高度
   // 否則塔會在建立時直接落下導致積木散落
-  TOWER_BASE_Y: 0.15,
+  TOWER_BASE_Y: 0.25,
   PHYSICS: {
     GRAVITY: -12,
     TIME_STEP: 1 / 60,
@@ -179,7 +180,8 @@ class JengaGame {
     });
     const groundMesh = new THREE.Mesh(groundGeo, groundMat);
     groundMesh.receiveShadow = true;
-    groundMesh.position.y = -0.1;
+    // 與物理地面一致，使塔底部不會嵌入地面
+    groundMesh.position.y = 0;
     this.scene.add(groundMesh);
   }
 
