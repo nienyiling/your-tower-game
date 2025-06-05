@@ -57,7 +57,7 @@
   </div>
   
   <!-- 主要遊戲腳本 -->
-  <script type="module" src="main.js"></script>
+  <script type="module" src="./main.js"></script>
   
   <!-- 錯誤處理 -->
   <script>
@@ -130,6 +130,10 @@
         }
         requestAnimationFrame(animate);
       };
+      script.addEventListener('error', (e) => {
+        console.warn('Failed to load stats.js');
+        e.stopImmediatePropagation();
+      });
       document.head.appendChild(script);
     }
   </script>

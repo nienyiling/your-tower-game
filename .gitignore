@@ -1,0 +1,10 @@
+# Ignore Python cache directories
+__pycache__/
+.pytest_cache/
+
+# Ignore Node modules and build artifacts
+node_modules/
+dist/
+
+# Misc logs
+server.log
