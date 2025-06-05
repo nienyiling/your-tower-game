@@ -635,8 +635,10 @@ class JengaGame {
 
 
   stabilizeTower() {
-    // 執行一次物理步驟以確保初始位置穩定
-    this.world.step(CONFIG.PHYSICS.TIME_STEP);
+    // 執行多次物理步驟以確保初始位置穩定
+    for (let i = 0; i < 5; i++) {
+      this.world.step(CONFIG.PHYSICS.TIME_STEP);
+    }
     this.blocks.forEach(block => {
       block.body.velocity.setZero();
       block.body.angularVelocity.setZero();
