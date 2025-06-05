@@ -130,6 +130,10 @@
         }
         requestAnimationFrame(animate);
       };
+      script.addEventListener('error', (e) => {
+        console.warn('Failed to load stats.js');
+        e.stopImmediatePropagation();
+      });
       document.head.appendChild(script);
     }
   </script>
