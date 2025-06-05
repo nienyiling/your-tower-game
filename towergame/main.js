@@ -303,6 +303,8 @@ class JengaGame {
     
     body.quaternion.setFromEuler(0, rotation, 0);
     this.world.addBody(body);
+    // 初始狀態先讓積木進入睡眠，避免遊戲開始前就滑動或倒塌
+    body.sleep();
 
     // 儲存區塊資料
     const block = {
