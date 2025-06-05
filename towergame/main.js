@@ -8,7 +8,10 @@ const CONFIG = {
   BLOCK_GAP: 0.05,
   LAYERS: 18,
   BLOCKS_PER_LAYER: 3,
-  TOWER_BASE_Y: 0.3,
+  // 物理地面厚度為0.2，中心位於Y=0，
+  // 因此塔底中心需在地面頂部(0.1)再加半塊積木(0.15)的高度
+  // 否則塔會在建立時直接落下導致積木散落
+  TOWER_BASE_Y: 0.25,
   PHYSICS: {
     GRAVITY: -12,
     TIME_STEP: 1 / 60,
@@ -79,6 +82,7 @@ class JengaGame {
     this.setupMaterials();
     await this.loadTextures();
     this.buildTower();
+    this.stabilizeTower();
     await this.setupControls();
     this.setupEventListeners();
     this.setupUI();
@@ -177,7 +181,8 @@ class JengaGame {
     });
     const groundMesh = new THREE.Mesh(groundGeo, groundMat);
     groundMesh.receiveShadow = true;
-    groundMesh.position.y = -0.1;
+    // 與物理地面一致，使塔底部不會嵌入地面
+    groundMesh.position.y = 0;
     this.scene.add(groundMesh);
   }
 
@@ -206,25 +211,25 @@ class JengaGame {
   }
 
   async loadTextures() {
-    const textureLoader = new THREE.TextureLoader();
-    
-    try {
-      const woodTexture = await textureLoader.loadAsync('./assets/wood.jpg');
-      woodTexture.wrapS = woodTexture.wrapT = THREE.RepeatWrapping;
-      
-      this.materials.wood = new THREE.MeshStandardMaterial({
-        map: woodTexture,
-        roughness: 0.7,
-        metalness: 0.1
-      });
-    } catch (error) {
-      console.warn('無法載入木材紋理，使用預設材質');
-      this.materials.wood = new THREE.MeshStandardMaterial({
-        color: 0x8B4513,
-        roughness: 0.7,
-        metalness: 0.1
-      });
+    // 使用 Canvas 產生簡易木紋紋理，避免外部二進位檔案
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#8b5a2b';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    for (let i = 0; i < size; i += 4) {
+      ctx.fillRect(i, 0, 2, size);
     }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = 4;
+    this.materials.wood = new THREE.MeshStandardMaterial({
+      map: texture,
+      roughness: 0.7,
+      metalness: 0.1
+    });
   }
 
   buildTower() {
@@ -613,7 +618,7 @@ class JengaGame {
   }
 
   checkTowerStability() {
-    const fallen = this.blocks.some(block => 
+    const fallen = this.blocks.some(block =>
       !block.removed && block.mesh.position.y < 0.05
     );
 
@@ -623,6 +628,18 @@ class JengaGame {
       info.innerHTML += '<p style="color: red; font-weight: bold;">塔倒了！遊戲結束。</p>';
       this.renderer.domElement.style.pointerEvents = 'none';
     }
+  }
+
+
+
+  stabilizeTower() {
+    // 執行一次物理步驟以確保初始位置穩定
+    this.world.step(CONFIG.PHYSICS.TIME_STEP);
+    this.blocks.forEach(block => {
+      block.body.velocity.setZero();
+      block.body.angularVelocity.setZero();
+      block.body.sleep();
+    });
   }
 
   restart() {
@@ -638,7 +655,8 @@ class JengaGame {
     
     // 重建塔
     this.buildTower();
-    
+    this.stabilizeTower();
+
     // 重置 UI
     this.setupUI();
     this.renderer.domElement.style.pointerEvents = 'auto';

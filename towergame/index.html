@@ -19,7 +19,6 @@
   <!-- 預載入重要資源 -->
   <link rel="preload" href="./libs/three.module.min.js" as="script">
   <link rel="preload" href="./libs/cannon-es.js" as="script">
-  <link rel="preload" href="./assets/wood.jpg" as="image">
   
   <!-- Favicon (可選) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🎯</text></svg>">
@@ -51,13 +50,9 @@
     </ul>
   </div>
   
-  <!-- 音效控制 (可選功能) -->
-  <div id="sound-control" style="position: absolute; bottom: 20px; right: 20px; display: none;">
-    <button id="toggle-sound">🔊</button>
-  </div>
-  
+
   <!-- 主要遊戲腳本 -->
-  <script type="module" src="main.js"></script>
+  <script type="module" src="./main.js"></script>
   
   <!-- 錯誤處理 -->
   <script>
@@ -130,6 +125,10 @@
         }
         requestAnimationFrame(animate);
       };
+      script.addEventListener('error', (e) => {
+        console.warn('Failed to load stats.js');
+        e.stopImmediatePropagation();
+      });
       document.head.appendChild(script);
     }
   </script>
