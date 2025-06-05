@@ -8,7 +8,9 @@ const CONFIG = {
   BLOCK_GAP: 0.05,
   LAYERS: 18,
   BLOCKS_PER_LAYER: 3,
-  TOWER_BASE_Y: 0.3,
+  // 初始塔底座中心高度應位於地面上方半塊積木的距離，
+  // 否則塔會在建立時直接落下導致積木散落
+  TOWER_BASE_Y: 0.15,
   PHYSICS: {
     GRAVITY: -12,
     TIME_STEP: 1 / 60,
