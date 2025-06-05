@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="3D 疊疊樂遊戲 - 挑戰你的手眼協調能力">
+  <meta name="theme-color" content="#1a0f07">
+  
+  <title>3D 疊疊樂 - Jenga Tower</title>
+  
+  <!-- 預載入字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- 樣式表 -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- 預載入重要資源 -->
+  <link rel="preload" href="./libs/three.module.min.js" as="script">
+  <link rel="preload" href="./libs/cannon-es.js" as="script">
+  <link rel="preload" href="./assets/wood.jpg" as="image">
+  
+  <!-- Favicon (可選) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🎯</text></svg>">
+</head>
+<body>
+  <!-- 載入動畫 -->
+  <div class="loading" id="loading">遊戲載入中</div>
+  
+  <!-- 遊戲容器 -->
+  <div id="game-container"></div>
+  
+  <!-- 遊戲資訊面板 -->
+  <div id="info">
+    <div style="padding: 10px; background: rgba(0,0,0,0.7); border-radius: 5px;">
+      <h3 style="margin: 0 0 10px 0;">疊疊樂</h3>
+      <p>移動次數: <span id="moves">0</span></p>
+      <p>提示: 只能移動最上三層以外的積木</p>
+      <button id="restart" style="margin-top: 10px;">重新開始</button>
+    </div>
+  </div>
+  
+  <!-- 遊戲提示 (初始隱藏) -->
+  <div id="game-tips" style="display: none;">
+    <ul>
+      <li>點擊並拖曳積木</li>
+      <li>將積木放到塔頂</li>
+      <li>按 ESC 取消拖曳</li>
+      <li>保持塔的平衡！</li>
+    </ul>
+  </div>
+  
+  <!-- 音效控制 (可選功能) -->
+  <div id="sound-control" style="position: absolute; bottom: 20px; right: 20px; display: none;">
+    <button id="toggle-sound">🔊</button>
+  </div>
+  
+  <!-- 主要遊戲腳本 -->
+  <script type="module" src="main.js"></script>
+  
+  <!-- 錯誤處理 -->
+  <script>
+    // 基本錯誤處理
+    window.addEventListener('error', function(e) {
+      console.error('遊戲錯誤:', e.error);
+      document.getElementById('loading').style.display = 'none';
+      
+      // 顯示錯誤訊息
+      const errorMsg = document.createElement('div');
+      errorMsg.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 0, 0, 0.9);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        font-size: 16px;
+        z-index: 1000;
+      `;
+      errorMsg.innerHTML = `
+        <h3>載入錯誤</h3>
+        <p>遊戲載入失敗，請檢查：</p>
+        <ul>
+          <li>所有資源檔案是否存在</li>
+          <li>瀏覽器是否支援 WebGL</li>
+          <li>網路連線是否正常</li>
+        </ul>
+        <button onclick="location.reload()">重新載入</button>
+      `;
+      document.body.appendChild(errorMsg);
+    });
+    
+    // 檢查 WebGL 支援
+    if (!window.WebGLRenderingContext) {
+      alert('您的瀏覽器不支援 WebGL，無法執行此遊戲！');
+    }
+    
+    // 遊戲載入完成後隱藏載入動畫
+    window.addEventListener('DOMContentLoaded', function() {
+      setTimeout(() => {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.opacity = '0';
+          setTimeout(() => loading.style.display = 'none', 300);
+        }
+      }, 1000);
+    });
+  </script>
+  
+  <!-- 性能監控 (開發模式) -->
+  <script>
+    // 在開發模式下可以啟用 FPS 監控
+    if (window.location.hostname === 'localhost') {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js';
+      script.onload = function() {
+        const stats = new Stats();
+        stats.showPanel(0); // 0: fps, 1: ms, 2: mb
+        stats.dom.style.cssText = 'position:fixed;top:0;left:0;z-index:10000';
+        document.body.appendChild(stats.dom);
+        
+        function animate() {
+          stats.begin();
+          // 遊戲渲染邏輯
+          stats.end();
+          requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+      };
+      document.head.appendChild(script);
+    }
+  </script>
+</body>
+</html>
