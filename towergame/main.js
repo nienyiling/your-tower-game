@@ -237,20 +237,13 @@ class JengaGame {
   buildTower() {
     let y = CONFIG.TOWER_BASE_Y;
     
-    for (let layer = 0; layer < CONFIG.LAYERS; layer++) {
-      const isEvenLayer = layer % 2 === 0;
-      
-      for (let i = 0; i < CONFIG.BLOCKS_PER_LAYER; i++) {
-        const position = this.calculateBlockPosition(layer, i, y);
-        const rotation = isEvenLayer ? 0 : Math.PI / 2;
-        
-        this.createBlock(position, rotation, layer, i);
-      }
-          
-    }
-
-    // 生成後啟用動態物理並讓積木保持休眠狀態
-    this.blocks.forEach(block => {
+    // 偶數層的積木長邊朝 X 軸，沿 X 軸排列
+    // 奇數層的積木長邊朝 Z 軸，沿 Z 軸排列
+      isEvenLayer ? offset : 0,
+      isEvenLayer ? 0 : offset
+      mass: 1,
+    this.world.addBody(body);
+    body.sleep();
       block.body.mass = 1;
       block.body.type = CANNON.Body.DYNAMIC;
       block.body.updateMassProperties();
