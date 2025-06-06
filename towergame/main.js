@@ -4,11 +4,13 @@ import * as CANNON from './libs/cannon-es.js';
 
 // 遊戲配置
 const CONFIG = {
+
   BLOCK_SIZE: { x: 0.9, y: 0.3, z: 0.3 },
   // 同層積木之間的水平間距，設為 0 讓積木緊貼
   BLOCK_GAP: 0,
   // 垂直層與層之間的間距，設為 0 讓積木貼合
   LAYER_GAP: 0,
+
   LAYERS: 18,
   BLOCKS_PER_LAYER: 3,
   // 物理地面厚度為0.2，中心位於Y=0，
@@ -130,10 +132,12 @@ class JengaGame {
     const defaultContactMaterial = new CANNON.ContactMaterial(
       defaultMaterial,
       defaultMaterial,
+
       {
         friction: 0.6,
         restitution: 0
       }
+
     );
     this.world.addContactMaterial(defaultContactMaterial);
     this.world.defaultContactMaterial = defaultContactMaterial;
@@ -234,6 +238,7 @@ class JengaGame {
     }
   }
 
+
   buildTower() {
     let y = CONFIG.TOWER_BASE_Y;
 
@@ -274,6 +279,7 @@ class JengaGame {
   }
 
   createBlock(position, rotation, layer, index, staticBody = false) {
+
     // Three.js 網格
     const geometry = new THREE.BoxGeometry(
       CONFIG.BLOCK_SIZE.x,
@@ -306,6 +312,7 @@ class JengaGame {
       CONFIG.BLOCK_SIZE.z / 2
     ));
     
+
     const body = new CANNON.Body({
       mass: staticBody ? 0 : 1,
       shape: shape,
@@ -314,6 +321,7 @@ class JengaGame {
       sleepTimeLimit: 1,
       type: staticBody ? CANNON.Body.STATIC : CANNON.Body.DYNAMIC
     });
+
     
     body.quaternion.setFromEuler(0, rotation, 0);
     this.world.addBody(body);
@@ -563,6 +571,7 @@ class JengaGame {
     
     if (topBlocks.length === 0) return CONFIG.TOWER_BASE_Y;
     
+
     return topBlocks[0].mesh.position.y + CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP;
   }
 
@@ -579,7 +588,9 @@ class JengaGame {
       block.removed = true;
       
       // 更新層數
+
       block.layer = Math.floor((topY - CONFIG.TOWER_BASE_Y) / (CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP));
+
       
       // 增加移動次數
       this.gameState.moves++;
@@ -702,4 +713,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // 導出類供其他模組使用
+
 export { JengaGame };
+
