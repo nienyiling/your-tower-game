@@ -458,42 +458,7 @@ class JengaGame {
 
   canRemoveBlock(block) {
     // 檢查移除此積木是否會導致塔不穩定
-    const layerBlocks = this.blocks.filter(
-      b => b.layer === block.layer && !b.removed
-    );
-    
-    return layerBlocks.length > 1;
-  }
 
-  updateHover() {
-    // 清除所有高亮
-    this.blocks.forEach(block => {
-      if (block.outlineMesh) {
-        block.outlineMesh.visible = false;
-      }
-    });
-
-    this.raycaster.setFromCamera(this.mouse, this.camera);
-    const selectableBlocks = this.getSelectableBlocks();
-    const intersects = this.raycaster.intersectObjects(
-      selectableBlocks.map(b => b.mesh)
-    );
-
-    if (intersects.length > 0) {
-      const block = intersects[0].object.userData.block;
-      if (this.canRemoveBlock(block) && block.outlineMesh) {
-        block.outlineMesh.visible = true;
-        this.renderer.domElement.style.cursor = 'pointer';
-      }
-    } else {
-      this.renderer.domElement.style.cursor = 'default';
-    }
-  }
-
-
-  startDragging(block, point) {
-    this.wakeUpAllBlocks();
-    this.gameState.selectedBlock = block;
     this.gameState.isDragging = true;
     block.isMoving = true;
 
@@ -505,26 +470,69 @@ class JengaGame {
     const planePoint = new THREE.Vector3(0, block.dragStartY, 0);
     this.gameState.dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, planePoint);
 
-
-    // 設為運動學物體
-    block.body.type = CANNON.Body.KINEMATIC;
-    block.body.velocity.setZero();
-    block.body.angularVelocity.setZero();
-
-    // 視覺反饋
-    block.mesh.material.emissive = new THREE.Color(0x333333);
-    if (block.outlineMesh) {
-      block.outlineMesh.visible = false;
-    }
-
-    // 禁用控制器
-    if (this.controls) {
-      this.controls.enabled = false;
-    }
-  }
-
   updateDragPosition() {
     const block = this.gameState.selectedBlock;
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    const intersection = new THREE.Vector3();
+    this.raycaster.ray.intersectPlane(this.gameState.dragPlane, intersection);
+
+    // 只允許沿著所在層的長邊方向移動
+    if (block.layer % 2 === 0) {
+      // 長邊朝 X 軸，只能沿 X 移動
+      block.mesh.position.x = intersection.x;
+      block.mesh.position.z = block.originalPosition.z;
+    } else {
+      // 長邊朝 Z 軸，只能沿 Z 移動
+      block.mesh.position.z = intersection.z;
+      block.mesh.position.x = block.originalPosition.x;
+    }
+
+    // 高度維持在拖曳開始時
+    block.mesh.position.y = block.dragStartY;
+
+    // 更新物理體位置
+    block.body.position.copy(block.mesh.position);
+
+    // 更新放置指示器
+    this.updatePlacementIndicator(block);
+  updatePlacementIndicator(block) {
+    const topY = this.getTopPosition();
+
+    // 只檢查水平方向是否接近塔中心
+    if (Math.abs(block.mesh.position.x) < 2 && Math.abs(block.mesh.position.z) < 2) {
+      this.placementIndicator.visible = true;
+      this.placementIndicator.position.set(block.mesh.position.x, topY, block.mesh.position.z);
+      this.placementIndicator.rotation.copy(block.mesh.rotation);
+
+      const isValidPlacement = this.isValidPlacement(block);
+      this.placementIndicator.material.color.setHex(
+        isValidPlacement ? CONFIG.COLORS.VALID_PLACEMENT : CONFIG.COLORS.INVALID_PLACEMENT
+      );
+    } else {
+      this.placementIndicator.visible = false;
+    }
+  }
+  isValidPlacement(block) {
+    // 確認積木水平方向接近塔中心
+    return Math.abs(block.mesh.position.x) < 1.5 &&
+           Math.abs(block.mesh.position.z) < 1.5;
+  }
+
+      // 標記為已移除（從原始位置）
+      block.removed = true;
+
+      // 更新層數
+
+      // 重新記錄基準位置，方便下次拖曳
+      block.originalPosition.copy(block.mesh.position);
+
+      // 增加移動次數
+      this.gameState.moves++;
+      this.updateUI();
+
+    
+
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     const intersection = new THREE.Vector3();
