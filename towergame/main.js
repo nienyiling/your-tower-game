@@ -10,7 +10,6 @@ const CONFIG = {
   BLOCK_GAP: 0,
   // 垂直層與層之間的間距，設為 0 讓積木貼合
   LAYER_GAP: 0,
-
   LAYERS: 18,
   BLOCKS_PER_LAYER: 3,
   // 物理地面厚度為0.2，中心位於Y=0，
@@ -137,7 +136,6 @@ class JengaGame {
         friction: 0.6,
         restitution: 0
       }
-
     );
     this.world.addContactMaterial(defaultContactMaterial);
     this.world.defaultContactMaterial = defaultContactMaterial;
@@ -284,8 +282,6 @@ class JengaGame {
 
   createBlock(position, rotation, layer, index, staticBody = false) {
 
- 
-
     // Three.js 網格
     const geometry = new THREE.BoxGeometry(
       CONFIG.BLOCK_SIZE.x,
@@ -331,7 +327,6 @@ class JengaGame {
     body.quaternion.setFromEuler(0, rotation, 0);
     this.world.addBody(body);
     body.sleep();
-
 
     // 儲存區塊資料
     const block = {
@@ -463,6 +458,7 @@ class JengaGame {
 
   canRemoveBlock(block) {
     // 檢查移除此積木是否會導致塔不穩定
+
     this.gameState.isDragging = true;
     block.isMoving = true;
 
@@ -534,18 +530,27 @@ class JengaGame {
       // 增加移動次數
       this.gameState.moves++;
       this.updateUI();
-    this.raycaster.setFromCamera(this.mouse, this.camera);
+
     
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
     const intersection = new THREE.Vector3();
     this.raycaster.ray.intersectPlane(this.gameState.dragPlane, intersection);
 
-    // 更新位置
-    block.mesh.position.x = intersection.x;
-    block.mesh.position.z = intersection.z;
-    
-    // 保持高度在塔頂
-    const topY = this.getTopPosition();
-    block.mesh.position.y = Math.max(block.mesh.position.y, topY);
+    // 只允許沿著所在層的長邊方向移動
+    if (block.layer % 2 === 0) {
+      // 長邊朝 X 軸，只能沿 X 移動
+      block.mesh.position.x = intersection.x;
+      block.mesh.position.z = block.originalPosition.z;
+    } else {
+      // 長邊朝 Z 軸，只能沿 Z 移動
+      block.mesh.position.z = intersection.z;
+      block.mesh.position.x = block.originalPosition.x;
+    }
+
+    // 高度維持在拖曳開始時
+    block.mesh.position.y = block.dragStartY;
 
     // 更新物理體位置
     block.body.position.copy(block.mesh.position);
@@ -556,14 +561,13 @@ class JengaGame {
 
   updatePlacementIndicator(block) {
     const topY = this.getTopPosition();
-    
-    if (Math.abs(block.mesh.position.y - topY) < 0.5) {
+
+    // 只檢查水平方向是否接近塔中心
+    if (Math.abs(block.mesh.position.x) < 2 && Math.abs(block.mesh.position.z) < 2) {
       this.placementIndicator.visible = true;
-      this.placementIndicator.position.copy(block.mesh.position);
-      this.placementIndicator.position.y = topY;
+      this.placementIndicator.position.set(block.mesh.position.x, topY, block.mesh.position.z);
       this.placementIndicator.rotation.copy(block.mesh.rotation);
-      
-      // 檢查放置是否有效
+
       const isValidPlacement = this.isValidPlacement(block);
       this.placementIndicator.material.color.setHex(
         isValidPlacement ? CONFIG.COLORS.VALID_PLACEMENT : CONFIG.COLORS.INVALID_PLACEMENT
@@ -574,11 +578,9 @@ class JengaGame {
   }
 
   isValidPlacement(block) {
-    // 簡單的放置驗證：檢查是否在合理範圍內
-    const topY = this.getTopPosition();
-    return Math.abs(block.mesh.position.y - topY) < 0.5 &&
-           Math.abs(block.mesh.position.x) < 2 &&
-           Math.abs(block.mesh.position.z) < 2;
+    // 確認積木水平方向接近塔中心
+    return Math.abs(block.mesh.position.x) < 1.5 &&
+           Math.abs(block.mesh.position.z) < 1.5;
   }
 
   getTopPosition() {
@@ -602,16 +604,20 @@ class JengaGame {
       block.mesh.position.y = topY;
       block.body.position.copy(block.mesh.position);
       
+
       // 標記為已移除（從原始位置）
       block.removed = true;
-      
-      // 更新層數
 
+      // 更新層數
       block.layer = Math.floor((topY - CONFIG.TOWER_BASE_Y) / (CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP));
-      
+
+      // 重新記錄基準位置，方便下次拖曳
+      block.originalPosition.copy(block.mesh.position);
+
       // 增加移動次數
       this.gameState.moves++;
       this.updateUI();
+
     } else {
       // 返回原位
       this.returnBlockToOriginalPosition(block);
@@ -658,6 +664,8 @@ class JengaGame {
 
     this.wakeUpAllBlocks();
 
+    this.wakeUpAllBlocks();
+
     // 檢查塔是否倒塌
     setTimeout(() => this.checkTowerStability(), 100);
   }
@@ -676,22 +684,8 @@ class JengaGame {
   }
 
   restart() {
-    // 清理現有物體
-    this.blocks.forEach(block => {
-      this.scene.remove(block.mesh);
-      this.world.removeBody(block.body);
-    });
-    this.blocks = [];
-
-    // 重置狀態
-    this.gameState.reset();
-    
-    // 重建塔
-    this.buildTower();
-    
-    // 重置 UI
-    this.setupUI();
-    this.renderer.domElement.style.pointerEvents = 'auto';
+    // 直接重新載入頁面，確保所有狀態完全重置
+    window.location.reload();
   }
 
   animate() {
@@ -734,4 +728,3 @@ window.addEventListener('DOMContentLoaded', () => {
 // 導出類供其他模組使用
 
 export { JengaGame };
-
