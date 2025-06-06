@@ -5,7 +5,10 @@ import * as CANNON from './libs/cannon-es.js';
 // 遊戲配置
 const CONFIG = {
   BLOCK_SIZE: { x: 0.9, y: 0.3, z: 0.3 },
-  BLOCK_GAP: 0.05,
+  // 同層積木之間的水平間距，設為 0 讓積木緊貼
+  BLOCK_GAP: 0,
+  // 垂直層與層之間的間距，設為 0 讓積木貼合
+  LAYER_GAP: 0,
   LAYERS: 18,
   BLOCKS_PER_LAYER: 3,
   // 物理地面厚度為0.2，中心位於Y=0，
@@ -128,8 +131,8 @@ class JengaGame {
       defaultMaterial,
       defaultMaterial,
       {
-        friction: 0.4,
-        restitution: 0.2
+        friction: 0.6,
+        restitution: 0
       }
     );
     this.world.addContactMaterial(defaultContactMaterial);
@@ -233,33 +236,48 @@ class JengaGame {
 
   buildTower() {
     let y = CONFIG.TOWER_BASE_Y;
-    
+
     for (let layer = 0; layer < CONFIG.LAYERS; layer++) {
       const isEvenLayer = layer % 2 === 0;
-      
+
       for (let i = 0; i < CONFIG.BLOCKS_PER_LAYER; i++) {
         const position = this.calculateBlockPosition(layer, i, y);
         const rotation = isEvenLayer ? 0 : Math.PI / 2;
-        
-        this.createBlock(position, rotation, layer, i);
+
+        // 在建塔階段先以靜態物體建立，避免互相擠壓導致倒塌
+        this.createBlock(position, rotation, layer, i, true);
       }
-      
-      y += CONFIG.BLOCK_SIZE.y + CONFIG.BLOCK_GAP;
+
+      y += CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP;
     }
+
+    // 建塔完成後再啟用物理模擬
+    this.blocks.forEach(block => {
+      block.body.mass = 1;
+      block.body.type = CANNON.Body.DYNAMIC;
+      block.body.updateMassProperties();
+      block.body.sleep();
+    });
+  }
+
+  wakeUpAllBlocks() {
+    this.blocks.forEach(b => b.body.wakeUp());
   }
 
   calculateBlockPosition(layer, index, y) {
     const isEvenLayer = layer % 2 === 0;
     const offset = (index - 1) * (CONFIG.BLOCK_SIZE.z + CONFIG.BLOCK_GAP);
-    
+
+    // 偶數層積木長邊朝 X 軸，需沿著 Z 軸排列
+    // 奇數層積木長邊朝 Z 軸，需沿著 X 軸排列
     return new THREE.Vector3(
-      isEvenLayer ? offset : 0,
+      isEvenLayer ? 0 : offset,
       y,
-      isEvenLayer ? 0 : offset
+      isEvenLayer ? offset : 0
     );
   }
 
-  createBlock(position, rotation, layer, index) {
+  createBlock(position, rotation, layer, index, staticBody = false) {
     // Three.js 網格
     const geometry = new THREE.BoxGeometry(
       CONFIG.BLOCK_SIZE.x,
@@ -293,15 +311,17 @@ class JengaGame {
     ));
     
     const body = new CANNON.Body({
-      mass: 1,
+      mass: staticBody ? 0 : 1,
       shape: shape,
       position: new CANNON.Vec3(position.x, position.y, position.z),
       sleepSpeedLimit: 0.1,
-      sleepTimeLimit: 1
+      sleepTimeLimit: 1,
+      type: staticBody ? CANNON.Body.STATIC : CANNON.Body.DYNAMIC
     });
     
     body.quaternion.setFromEuler(0, rotation, 0);
     this.world.addBody(body);
+    body.sleep();
 
     // 儲存區塊資料
     const block = {
@@ -466,6 +486,7 @@ class JengaGame {
   }
 
   startDragging(block, point) {
+    this.wakeUpAllBlocks();
     this.gameState.selectedBlock = block;
     this.gameState.isDragging = true;
     block.isMoving = true;
@@ -547,7 +568,7 @@ class JengaGame {
     
     if (topBlocks.length === 0) return CONFIG.TOWER_BASE_Y;
     
-    return topBlocks[0].mesh.position.y + CONFIG.BLOCK_SIZE.y + CONFIG.BLOCK_GAP;
+    return topBlocks[0].mesh.position.y + CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP;
   }
 
   placeBlock() {
@@ -563,7 +584,7 @@ class JengaGame {
       block.removed = true;
       
       // 更新層數
-      block.layer = Math.floor((topY - CONFIG.TOWER_BASE_Y) / (CONFIG.BLOCK_SIZE.y + CONFIG.BLOCK_GAP));
+      block.layer = Math.floor((topY - CONFIG.TOWER_BASE_Y) / (CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP));
       
       // 增加移動次數
       this.gameState.moves++;
@@ -611,6 +632,8 @@ class JengaGame {
     if (this.controls) {
       this.controls.enabled = true;
     }
+
+    this.wakeUpAllBlocks();
 
     // 檢查塔是否倒塌
     setTimeout(() => this.checkTowerStability(), 100);

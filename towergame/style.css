@@ -64,8 +64,8 @@ body::before {
 #info {
   position: absolute;
   top: 30px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 30px;
+  transform: none;
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -219,24 +219,29 @@ body::before {
 /* 響應式設計 */
 @media (max-width: 768px) {
   #info {
-    top: 20px;
-    padding: 16px 24px;
-    min-width: 280px;
-    width: 90%;
-    max-width: 400px;
+    top: 10px;
+    left: 10px;
+    transform: none;
+    padding: 8px 12px;
+    min-width: auto;
+    width: auto;
+    max-width: none;
   }
-  
-  #info h3 {
-    font-size: 24px;
+
+  #info h3,
+  #info p:nth-child(3) {
+    display: none;
   }
-  
+
   #info p {
-    font-size: 14px;
+    font-size: 12px;
+    margin: 0;
   }
-  
+
   #restart {
-    padding: 10px 24px;
-    font-size: 14px;
+    margin-top: 4px;
+    padding: 6px 16px;
+    font-size: 12px;
   }
 }
 
@@ -244,11 +249,11 @@ body::before {
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 }
 
