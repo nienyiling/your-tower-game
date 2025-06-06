@@ -4,6 +4,7 @@ import * as CANNON from './libs/cannon-es.js';
 
 // 遊戲配置
 const CONFIG = {
+
   BLOCK_SIZE: { x: 0.9, y: 0.3, z: 0.3 },
   // 同層積木之間的水平間距，設為 0 讓積木緊貼
   BLOCK_GAP: 0,
@@ -130,6 +131,7 @@ class JengaGame {
     const defaultContactMaterial = new CANNON.ContactMaterial(
       defaultMaterial,
       defaultMaterial,
+
       {
         friction: 0.6,
         restitution: 0
@@ -234,6 +236,7 @@ class JengaGame {
     }
   }
 
+
   buildTower() {
     let y = CONFIG.TOWER_BASE_Y;
 
@@ -278,6 +281,7 @@ class JengaGame {
   }
 
   createBlock(position, rotation, layer, index, staticBody = false) {
+
     // Three.js 網格
     const geometry = new THREE.BoxGeometry(
       CONFIG.BLOCK_SIZE.x,
@@ -310,6 +314,7 @@ class JengaGame {
       CONFIG.BLOCK_SIZE.z / 2
     ));
     
+
     const body = new CANNON.Body({
       mass: staticBody ? 0 : 1,
       shape: shape,
@@ -485,6 +490,7 @@ class JengaGame {
     }
   }
 
+
   startDragging(block, point) {
     this.wakeUpAllBlocks();
     this.gameState.selectedBlock = block;
@@ -498,6 +504,7 @@ class JengaGame {
     const normal = new THREE.Vector3(0, 1, 0);
     const planePoint = new THREE.Vector3(0, block.dragStartY, 0);
     this.gameState.dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, planePoint);
+
 
     // 設為運動學物體
     block.body.type = CANNON.Body.KINEMATIC;
@@ -575,7 +582,9 @@ class JengaGame {
     
     if (topBlocks.length === 0) return CONFIG.TOWER_BASE_Y;
     
+
     return topBlocks[0].mesh.position.y + CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP;
+
   }
 
   placeBlock() {
@@ -587,6 +596,7 @@ class JengaGame {
       block.mesh.position.y = topY;
       block.body.position.copy(block.mesh.position);
       
+
       // 標記為已移除（從原始位置）
       block.removed = true;
 
@@ -599,6 +609,7 @@ class JengaGame {
       // 增加移動次數
       this.gameState.moves++;
       this.updateUI();
+
     } else {
       // 返回原位
       this.returnBlockToOriginalPosition(block);
@@ -642,6 +653,8 @@ class JengaGame {
     if (this.controls) {
       this.controls.enabled = true;
     }
+
+    this.wakeUpAllBlocks();
 
     this.wakeUpAllBlocks();
 
@@ -705,4 +718,5 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // 導出類供其他模組使用
+
 export { JengaGame };
