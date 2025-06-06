@@ -4,6 +4,7 @@ import * as CANNON from './libs/cannon-es.js';
 
 // 遊戲配置
 const CONFIG = {
+
   BLOCK_SIZE: { x: 0.9, y: 0.3, z: 0.3 },
   // 同層積木之間的水平間距，設為 0 讓積木緊貼
   BLOCK_GAP: 0,
@@ -20,6 +21,7 @@ const CONFIG = {
     TIME_STEP: 1 / 60,
     ITERATIONS: 10
   },
+
   CAMERA: {
     FOV: 45,
     NEAR: 0.1,
@@ -127,6 +129,7 @@ class JengaGame {
     
     // 設置物理材質
     const defaultMaterial = new CANNON.Material('default');
+
     const defaultContactMaterial = new CANNON.ContactMaterial(
       defaultMaterial,
       defaultMaterial,
@@ -135,6 +138,7 @@ class JengaGame {
         restitution: 0
       }
     );
+
     this.world.addContactMaterial(defaultContactMaterial);
     this.world.defaultContactMaterial = defaultContactMaterial;
   }
@@ -234,6 +238,7 @@ class JengaGame {
     }
   }
 
+
   buildTower() {
     let y = CONFIG.TOWER_BASE_Y;
 
@@ -278,6 +283,7 @@ class JengaGame {
   }
 
   createBlock(position, rotation, layer, index, staticBody = false) {
+
     // Three.js 網格
     const geometry = new THREE.BoxGeometry(
       CONFIG.BLOCK_SIZE.x,
@@ -310,6 +316,7 @@ class JengaGame {
       CONFIG.BLOCK_SIZE.z / 2
     ));
     
+
     const body = new CANNON.Body({
       mass: staticBody ? 0 : 1,
       shape: shape,
@@ -456,37 +463,37 @@ class JengaGame {
 
   canRemoveBlock(block) {
     // 檢查移除此積木是否會導致塔不穩定
-    const layerBlocks = this.blocks.filter(
-      b => b.layer === block.layer && !b.removed
-    );
-    
-    return layerBlocks.length > 1;
-  }
 
-  updateHover() {
-    // 清除所有高亮
-    this.blocks.forEach(block => {
-      if (block.outlineMesh) {
-        block.outlineMesh.visible = false;
-      }
-    });
+    this.gameState.isDragging = true;
+    block.isMoving = true;
 
+    // 紀錄拖曳起始高度，保持與塔身齊平
+    block.dragStartY = block.mesh.position.y;
+
+    // 於起始高度建立水平平面，限制拖曳只在水平方向
+    const normal = new THREE.Vector3(0, 1, 0);
+    const planePoint = new THREE.Vector3(0, block.dragStartY, 0);
+    this.gameState.dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, planePoint);
+
+  updateDragPosition() {
+    const block = this.gameState.selectedBlock;
     this.raycaster.setFromCamera(this.mouse, this.camera);
-    const selectableBlocks = this.getSelectableBlocks();
-    const intersects = this.raycaster.intersectObjects(
-      selectableBlocks.map(b => b.mesh)
-    );
 
-    if (intersects.length > 0) {
-      const block = intersects[0].object.userData.block;
-      if (this.canRemoveBlock(block) && block.outlineMesh) {
-        block.outlineMesh.visible = true;
-        this.renderer.domElement.style.cursor = 'pointer';
-      }
+    const intersection = new THREE.Vector3();
+    this.raycaster.ray.intersectPlane(this.gameState.dragPlane, intersection);
+
+    // 只允許沿著所在層的長邊方向移動
+    if (block.layer % 2 === 0) {
+      // 長邊朝 X 軸，只能沿 X 移動
+      block.mesh.position.x = intersection.x;
+      block.mesh.position.z = block.originalPosition.z;
     } else {
-      this.renderer.domElement.style.cursor = 'default';
+      // 長邊朝 Z 軸，只能沿 Z 移動
+      block.mesh.position.z = intersection.z;
+      block.mesh.position.x = block.originalPosition.x;
     }
-  }
+
+
 
   startDragging(block, point) {
     this.wakeUpAllBlocks();
@@ -502,22 +509,50 @@ class JengaGame {
     const planePoint = new THREE.Vector3(0, block.dragStartY, 0);
     this.gameState.dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, planePoint);
 
-    // 設為運動學物體
-    block.body.type = CANNON.Body.KINEMATIC;
-    block.body.velocity.setZero();
-    block.body.angularVelocity.setZero();
 
-    // 視覺反饋
-    block.mesh.material.emissive = new THREE.Color(0x333333);
-    if (block.outlineMesh) {
-      block.outlineMesh.visible = false;
-    }
+    // 於起始高度建立水平平面，限制拖曳只在水平方向
+    const normal = new THREE.Vector3(0, 1, 0);
+    const planePoint = new THREE.Vector3(0, block.dragStartY, 0);
+    this.gameState.dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, planePoint);
 
-    // 禁用控制器
-    if (this.controls) {
-      this.controls.enabled = false;
+
+    // 更新放置指示器
+    this.updatePlacementIndicator(block);
+  updatePlacementIndicator(block) {
+    const topY = this.getTopPosition();
+
+    // 只檢查水平方向是否接近塔中心
+    if (Math.abs(block.mesh.position.x) < 2 && Math.abs(block.mesh.position.z) < 2) {
+      this.placementIndicator.visible = true;
+      this.placementIndicator.position.set(block.mesh.position.x, topY, block.mesh.position.z);
+      this.placementIndicator.rotation.copy(block.mesh.rotation);
+
+      const isValidPlacement = this.isValidPlacement(block);
+      this.placementIndicator.material.color.setHex(
+        isValidPlacement ? CONFIG.COLORS.VALID_PLACEMENT : CONFIG.COLORS.INVALID_PLACEMENT
+      );
+    } else {
+      this.placementIndicator.visible = false;
     }
   }
+  isValidPlacement(block) {
+    // 確認積木水平方向接近塔中心
+    return Math.abs(block.mesh.position.x) < 1.5 &&
+           Math.abs(block.mesh.position.z) < 1.5;
+  }
+
+      // 標記為已移除（從原始位置）
+      block.removed = true;
+
+      // 更新層數
+
+      // 重新記錄基準位置，方便下次拖曳
+      block.originalPosition.copy(block.mesh.position);
+
+      // 增加移動次數
+      this.gameState.moves++;
+      this.updateUI();
+
 
   updateDragPosition() {
     const block = this.gameState.selectedBlock;
@@ -571,6 +606,7 @@ class JengaGame {
            Math.abs(block.mesh.position.z) < 1.5;
   }
 
+
   getTopPosition() {
     const topBlocks = this.blocks
       .filter(b => !b.removed && !b.isMoving)
@@ -578,7 +614,9 @@ class JengaGame {
     
     if (topBlocks.length === 0) return CONFIG.TOWER_BASE_Y;
     
+
     return topBlocks[0].mesh.position.y + CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP;
+
   }
 
   placeBlock() {
@@ -590,6 +628,7 @@ class JengaGame {
       block.mesh.position.y = topY;
       block.body.position.copy(block.mesh.position);
       
+
       // 標記為仍在塔內，參與後續計算
       block.removed = false;
 
@@ -602,6 +641,7 @@ class JengaGame {
       // 增加移動次數
       this.gameState.moves++;
       this.updateUI();
+
     } else {
       // 返回原位
       this.returnBlockToOriginalPosition(block);
@@ -648,6 +688,12 @@ class JengaGame {
 
     this.wakeUpAllBlocks();
 
+    this.wakeUpAllBlocks();
+
+    this.wakeUpAllBlocks();
+
+    this.wakeUpAllBlocks();
+
     // 檢查塔是否倒塌
     setTimeout(() => this.checkTowerStability(), 100);
   }
@@ -665,10 +711,13 @@ class JengaGame {
     }
   }
 
+
   restart() {
     // 直接重新載入頁面，確保所有狀態完全重置
     window.location.reload();
   }
+
+
 
   animate() {
     requestAnimationFrame(() => this.animate());
@@ -708,4 +757,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // 導出類供其他模組使用
+
 export { JengaGame };
+
