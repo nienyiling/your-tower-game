@@ -4,11 +4,11 @@ import * as CANNON from './libs/cannon-es.js';
 
 // 遊戲配置
 const CONFIG = {
-
-  BLOCK_SIZE: { x: 0.9, y: 0.3, z: 0.3 },
-  // 同層積木之間的水平間距，設為 0 讓積木緊貼
-  BLOCK_GAP: 0,
-  // 垂直層與層之間的間距，設為 0 讓積木貼合
+  PHYSICS: {
+    GRAVITY: -10,
+    TIME_STEP: 1 / 60,
+    ITERATIONS: 10
+  },
   LAYER_GAP: 0,
   LAYERS: 18,
   BLOCKS_PER_LAYER: 3,
@@ -102,11 +102,11 @@ class JengaGame {
     this.camera = new THREE.PerspectiveCamera(
       CONFIG.CAMERA.FOV,
       window.innerWidth / window.innerHeight,
-      CONFIG.CAMERA.NEAR,
-      CONFIG.CAMERA.FAR
+    const defaultContactMaterial = new CANNON.ContactMaterial(
+      defaultMaterial,
+      defaultMaterial,
+        friction: 0.8,
     );
-    this.camera.position.copy(CONFIG.CAMERA.POSITION);
-    this.camera.lookAt(CONFIG.CAMERA.TARGET);
 
     // 渲染器設置
     this.renderer = new THREE.WebGLRenderer({ 
@@ -293,6 +293,9 @@ class JengaGame {
     mesh.position.copy(position);
     mesh.rotation.y = rotation;
     mesh.castShadow = true;
+
+    body.linearDamping = 0.05;
+    body.angularDamping = 0.05;
     mesh.receiveShadow = true;
     
     // 添加外框網格（用於高亮）
