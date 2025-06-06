@@ -219,26 +219,29 @@ body::before {
 /* 響應式設計 */
 @media (max-width: 768px) {
   #info {
-    top: 20px;
-    left: 20px;
+    top: 10px;
+    left: 10px;
     transform: none;
-    padding: 16px 24px;
-    min-width: 280px;
+    padding: 8px 12px;
+    min-width: auto;
     width: auto;
-    max-width: 400px;
+    max-width: none;
   }
-  
-  #info h3 {
-    font-size: 24px;
+
+  #info h3,
+  #info p:nth-child(3) {
+    display: none;
   }
-  
+
   #info p {
-    font-size: 14px;
+    font-size: 12px;
+    margin: 0;
   }
-  
+
   #restart {
-    padding: 10px 24px;
-    font-size: 14px;
+    margin-top: 4px;
+    padding: 6px 16px;
+    font-size: 12px;
   }
 }
 

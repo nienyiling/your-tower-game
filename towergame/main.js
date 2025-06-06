@@ -5,7 +5,10 @@ import * as CANNON from './libs/cannon-es.js';
 // 遊戲配置
 const CONFIG = {
   BLOCK_SIZE: { x: 0.9, y: 0.3, z: 0.3 },
-  BLOCK_GAP: 0.05,
+  // 同層積木之間的水平間距
+  BLOCK_GAP: 0,
+  // 垂直層與層之間的間距，設為 0 讓積木貼合
+  LAYER_GAP: 0,
   LAYERS: 18,
   BLOCKS_PER_LAYER: 3,
   // 物理地面厚度為0.2，中心位於Y=0，
@@ -128,8 +131,8 @@ class JengaGame {
       defaultMaterial,
       defaultMaterial,
       {
-        friction: 0.4,
-        restitution: 0.2
+        friction: 0.6,
+        restitution: 0
       }
     );
     this.world.addContactMaterial(defaultContactMaterial);
@@ -243,8 +246,7 @@ class JengaGame {
         
         this.createBlock(position, rotation, layer, i);
       }
-      
-      y += CONFIG.BLOCK_SIZE.y + CONFIG.BLOCK_GAP;
+          
     }
 
     // 生成後啟用動態物理並讓積木保持休眠狀態
@@ -557,7 +559,7 @@ class JengaGame {
     
     if (topBlocks.length === 0) return CONFIG.TOWER_BASE_Y;
     
-    return topBlocks[0].mesh.position.y + CONFIG.BLOCK_SIZE.y + CONFIG.BLOCK_GAP;
+    return topBlocks[0].mesh.position.y + CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP;
   }
 
   placeBlock() {
@@ -573,7 +575,7 @@ class JengaGame {
       block.removed = true;
       
       // 更新層數
-      block.layer = Math.floor((topY - CONFIG.TOWER_BASE_Y) / (CONFIG.BLOCK_SIZE.y + CONFIG.BLOCK_GAP));
+      block.layer = Math.floor((topY - CONFIG.TOWER_BASE_Y) / (CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP));
       
       // 增加移動次數
       this.gameState.moves++;
