@@ -246,16 +246,26 @@ class JengaGame {
       
       y += CONFIG.BLOCK_SIZE.y + CONFIG.BLOCK_GAP;
     }
+
+    // 生成後啟用動態物理並讓積木保持休眠狀態
+    this.blocks.forEach(block => {
+      block.body.mass = 1;
+      block.body.type = CANNON.Body.DYNAMIC;
+      block.body.updateMassProperties();
+      block.body.sleep();
+    });
   }
 
   calculateBlockPosition(layer, index, y) {
     const isEvenLayer = layer % 2 === 0;
     const offset = (index - 1) * (CONFIG.BLOCK_SIZE.z + CONFIG.BLOCK_GAP);
-    
+
+    // 偶數層的積木長邊朝 X 軸，需沿著 Z 軸排列
+    // 奇數層的積木長邊朝 Z 軸，需沿著 X 軸排列
     return new THREE.Vector3(
-      isEvenLayer ? offset : 0,
+      isEvenLayer ? 0 : offset,
       y,
-      isEvenLayer ? 0 : offset
+      isEvenLayer ? offset : 0
     );
   }
 
@@ -293,7 +303,7 @@ class JengaGame {
     ));
     
     const body = new CANNON.Body({
-      mass: 1,
+      mass: 0,
       shape: shape,
       position: new CANNON.Vec3(position.x, position.y, position.z),
       sleepSpeedLimit: 0.1,
