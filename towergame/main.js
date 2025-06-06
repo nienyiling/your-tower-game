@@ -246,8 +246,7 @@ class JengaGame {
         
         this.createBlock(position, rotation, layer, i);
       }
-      
-      y += CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP;
+          
     }
 
     // 生成後啟用動態物理並讓積木保持休眠狀態
