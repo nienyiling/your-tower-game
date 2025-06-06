@@ -64,8 +64,8 @@ body::before {
 #info {
   position: absolute;
   top: 30px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 30px;
+  transform: none;
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -220,9 +220,11 @@ body::before {
 @media (max-width: 768px) {
   #info {
     top: 20px;
+    left: 20px;
+    transform: none;
     padding: 16px 24px;
     min-width: 280px;
-    width: 90%;
+    width: auto;
     max-width: 400px;
   }
   
@@ -244,11 +246,11 @@ body::before {
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 }
 

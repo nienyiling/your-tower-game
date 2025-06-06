@@ -246,6 +246,14 @@ class JengaGame {
       
       y += CONFIG.BLOCK_SIZE.y + CONFIG.BLOCK_GAP;
     }
+
+    // 生成後啟用動態物理並讓積木保持休眠狀態
+    this.blocks.forEach(block => {
+      block.body.mass = 1;
+      block.body.type = CANNON.Body.DYNAMIC;
+      block.body.updateMassProperties();
+      block.body.sleep();
+    });
   }
 
   calculateBlockPosition(layer, index, y) {
@@ -295,7 +303,7 @@ class JengaGame {
     ));
     
     const body = new CANNON.Body({
-      mass: 1,
+      mass: 0,
       shape: shape,
       position: new CANNON.Vec3(position.x, position.y, position.z),
       sleepSpeedLimit: 0.1,
