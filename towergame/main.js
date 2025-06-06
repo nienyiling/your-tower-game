@@ -236,19 +236,26 @@ class JengaGame {
 
   buildTower() {
     let y = CONFIG.TOWER_BASE_Y;
-    
+
     for (let layer = 0; layer < CONFIG.LAYERS; layer++) {
       const isEvenLayer = layer % 2 === 0;
-      
+
       for (let i = 0; i < CONFIG.BLOCKS_PER_LAYER; i++) {
         const position = this.calculateBlockPosition(layer, i, y);
         const rotation = isEvenLayer ? 0 : Math.PI / 2;
-        
-        this.createBlock(position, rotation, layer, i);
+
+        // 在建塔階段先以靜態物體建立，避免互相擠壓導致倒塌
+        this.createBlock(position, rotation, layer, i, true);
       }
-      
+
       y += CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP;
     }
+
+    // 建塔完成後再啟用物理模擬
+    this.blocks.forEach(b => {
+      b.body.type = CANNON.Body.DYNAMIC;
+      b.body.sleep();
+    });
   }
 
   calculateBlockPosition(layer, index, y) {
@@ -264,7 +271,7 @@ class JengaGame {
     );
   }
 
-  createBlock(position, rotation, layer, index) {
+  createBlock(position, rotation, layer, index, staticBody = false) {
     // Three.js 網格
     const geometry = new THREE.BoxGeometry(
       CONFIG.BLOCK_SIZE.x,
@@ -302,7 +309,8 @@ class JengaGame {
       shape: shape,
       position: new CANNON.Vec3(position.x, position.y, position.z),
       sleepSpeedLimit: 0.1,
-      sleepTimeLimit: 1
+      sleepTimeLimit: 1,
+      type: staticBody ? CANNON.Body.STATIC : CANNON.Body.DYNAMIC
     });
     
     body.quaternion.setFromEuler(0, rotation, 0);
