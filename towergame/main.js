@@ -265,12 +265,16 @@ class JengaGame {
     });
   }
 
+  wakeUpAllBlocks() {
+    this.blocks.forEach(b => b.body.wakeUp());
+  }
+
   calculateBlockPosition(layer, index, y) {
     const isEvenLayer = layer % 2 === 0;
     const offset = (index - 1) * (CONFIG.BLOCK_SIZE.z + CONFIG.BLOCK_GAP);
 
-    // 偶數層的積木長邊朝 X 軸，需沿著 Z 軸排列
-    // 奇數層的積木長邊朝 Z 軸，需沿著 X 軸排列
+    // 偶數層積木長邊朝 X 軸，需沿著 Z 軸排列
+    // 奇數層積木長邊朝 Z 軸，需沿著 X 軸排列
     return new THREE.Vector3(
       isEvenLayer ? 0 : offset,
       y,
@@ -279,6 +283,8 @@ class JengaGame {
   }
 
   createBlock(position, rotation, layer, index, staticBody = false) {
+
+ 
 
     // Three.js 網格
     const geometry = new THREE.BoxGeometry(
@@ -321,11 +327,11 @@ class JengaGame {
       sleepTimeLimit: 1,
       type: staticBody ? CANNON.Body.STATIC : CANNON.Body.DYNAMIC
     });
-
     
     body.quaternion.setFromEuler(0, rotation, 0);
     this.world.addBody(body);
     body.sleep();
+
 
     // 儲存區塊資料
     const block = {
@@ -490,6 +496,7 @@ class JengaGame {
   }
 
   startDragging(block, point) {
+    this.wakeUpAllBlocks();
     this.gameState.selectedBlock = block;
     this.gameState.isDragging = true;
     block.isMoving = true;
@@ -573,6 +580,7 @@ class JengaGame {
     
 
     return topBlocks[0].mesh.position.y + CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP;
+
   }
 
   placeBlock() {
@@ -590,7 +598,6 @@ class JengaGame {
       // 更新層數
 
       block.layer = Math.floor((topY - CONFIG.TOWER_BASE_Y) / (CONFIG.BLOCK_SIZE.y + CONFIG.LAYER_GAP));
-
       
       // 增加移動次數
       this.gameState.moves++;
@@ -638,6 +645,8 @@ class JengaGame {
     if (this.controls) {
       this.controls.enabled = true;
     }
+
+    this.wakeUpAllBlocks();
 
     // 檢查塔是否倒塌
     setTimeout(() => this.checkTowerStability(), 100);
