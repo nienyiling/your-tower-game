@@ -251,11 +251,13 @@ class JengaGame {
   calculateBlockPosition(layer, index, y) {
     const isEvenLayer = layer % 2 === 0;
     const offset = (index - 1) * (CONFIG.BLOCK_SIZE.z + CONFIG.BLOCK_GAP);
-    
+
+    // 偶數層的積木長邊朝 X 軸，需沿著 Z 軸排列
+    // 奇數層的積木長邊朝 Z 軸，需沿著 X 軸排列
     return new THREE.Vector3(
-      isEvenLayer ? offset : 0,
+      isEvenLayer ? 0 : offset,
       y,
-      isEvenLayer ? 0 : offset
+      isEvenLayer ? offset : 0
     );
   }
 
