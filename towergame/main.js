@@ -316,6 +316,7 @@ class JengaGame {
       CONFIG.BLOCK_SIZE.z / 2
     ));
     
+
     const body = new CANNON.Body({
       mass: staticBody ? 0 : 1,
       shape: shape,
@@ -493,6 +494,7 @@ class JengaGame {
     }
 
 
+
   startDragging(block, point) {
     this.wakeUpAllBlocks();
     this.gameState.selectedBlock = block;
@@ -501,6 +503,12 @@ class JengaGame {
 
     // 紀錄拖曳起始高度，保持與塔身齊平
     block.dragStartY = block.mesh.position.y;
+
+    // 於起始高度建立水平平面，限制拖曳只在水平方向
+    const normal = new THREE.Vector3(0, 1, 0);
+    const planePoint = new THREE.Vector3(0, block.dragStartY, 0);
+    this.gameState.dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, planePoint);
+
 
     // 於起始高度建立水平平面，限制拖曳只在水平方向
     const normal = new THREE.Vector3(0, 1, 0);
@@ -684,6 +692,8 @@ class JengaGame {
 
     this.wakeUpAllBlocks();
 
+    this.wakeUpAllBlocks();
+
     // 檢查塔是否倒塌
     setTimeout(() => this.checkTowerStability(), 100);
   }
@@ -706,6 +716,7 @@ class JengaGame {
     // 直接重新載入頁面，確保所有狀態完全重置
     window.location.reload();
   }
+
 
 
   animate() {
