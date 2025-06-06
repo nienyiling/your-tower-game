@@ -239,10 +239,10 @@ class JengaGame {
   }
 
 
-  buildTower() {
-    let y = CONFIG.TOWER_BASE_Y;
-
-    for (let layer = 0; layer < CONFIG.LAYERS; layer++) {
+    // 偶數層積木長邊朝 X 軸，沿 X 軸排列
+    // 奇數層積木長邊朝 Z 軸，沿 Z 軸排列
+      isEvenLayer ? offset : 0,
+      isEvenLayer ? 0 : offset
       const isEvenLayer = layer % 2 === 0;
 
       for (let i = 0; i < CONFIG.BLOCKS_PER_LAYER; i++) {
