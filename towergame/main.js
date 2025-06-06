@@ -1,6 +1,7 @@
 // main.js - 優化版疊疊樂遊戲
 import * as THREE from './libs/three.module.min.js';
 import * as CANNON from './libs/cannon-es.js';
+import { OrbitControls } from './libs/OrbitControls.js';
 
 // 遊戲配置
 const CONFIG = {
@@ -52,10 +53,10 @@ class GameState {
 
   reset() {
     this.isGameOver = false;
-    this.selectedBlock = null;
-    this.isDragging = false;
-    this.score = 0;
-    this.moves = 0;
+  async init() {
+    await this.loadTextures();
+    this.buildTower();
+    this.setupControls();
     this.topLayer = CONFIG.LAYERS - 1;
   }
 }
@@ -318,21 +319,16 @@ class JengaGame {
     
     const body = new CANNON.Body({
       mass: staticBody ? 0 : 1,
-      shape: shape,
-      position: new CANNON.Vec3(position.x, position.y, position.z),
-      sleepSpeedLimit: 0.1,
-      sleepTimeLimit: 1,
-      type: staticBody ? CANNON.Body.STATIC : CANNON.Body.DYNAMIC
-    });
-
-    body.linearDamping = 0.05;
-    body.angularDamping = 0.05;
-    
-    body.quaternion.setFromEuler(0, rotation, 0);
-    this.world.addBody(body);
-    body.sleep();
-
-    // 儲存區塊資料
+  setupControls() {
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.target.copy(CONFIG.CAMERA.TARGET);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05;
+    this.controls.maxPolarAngle = Math.PI / 2 - 0.1;
+    this.controls.minDistance = 5;
+    this.controls.maxDistance = 20;
+    this.controls.update();
+  }
     const block = {
       mesh,
       body,
